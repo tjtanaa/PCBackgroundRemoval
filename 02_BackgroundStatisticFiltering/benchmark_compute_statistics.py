@@ -3,6 +3,7 @@ import pandas as pd
 import os
 from tqdm import tqdm
 
+
 def process_point_cloud_statistics(input_directory, output_file):
     """
     Process point cloud data across 250 frames to calculate range statistics.
@@ -12,10 +13,7 @@ def process_point_cloud_statistics(input_directory, output_file):
         output_file: Path to output CSV file
     """
     # Define channel attributes
-    channels = [
-        "x", "y", "z", "intensity", "range", 
-        "ambient", "reflectivity"
-    ]
+    channels = ["x", "y", "z", "intensity", "range", "ambient", "reflectivity"]
 
     # Number of points in each point cloud
     num_points = 262144
@@ -24,13 +22,17 @@ def process_point_cloud_statistics(input_directory, output_file):
     # Using a list of lists for efficient appending
     point_range_values = [[] for _ in range(num_points)]
 
-    print("Processing 250 point cloud frames...")
+    print("Processing point cloud frames...")
 
-    pc_filename_list = [os.path.join(input_directory, filename) for filename in os.listdir(input_directory) if ".bin" in filename]
+    pc_filename_list = [
+        os.path.join(input_directory, filename)
+        for filename in os.listdir(input_directory)
+        if ".bin" in filename
+    ]
     # print(pc_filename_list)
 
     # Process each frame
-    for file_path in tqdm(pc_filename_list[:10]):
+    for file_path in tqdm(pc_filename_list[:]):
         # Load point cloud data (assuming files are named consistently)
         # Adjust the file loading according to your actual data format
         point_cloud = np.fromfile(file_path, "<f4")
@@ -72,23 +74,36 @@ def process_point_cloud_statistics(input_directory, output_file):
         max_range = np.max(ranges)
 
         # Calculate quantiles
-        quantile_values = np.quantile(ranges, quantiles) if len(ranges) > 1 else [np.nan] * len(quantiles)
+        quantile_values = (
+            np.quantile(ranges, quantiles)
+            if len(ranges) > 1
+            else [np.nan] * len(quantiles)
+        )
 
         # Add statistics for this point
         statistics.append([point_idx, min_range, max_range] + list(quantile_values))
 
     # Create DataFrame and save to CSV
-    columns = ["point_idx", "min_range", "max_range", 
-               "quantile_0.01", "quantile_0.05", "quantile_0.25", 
-               "quantile_0.75", "quantile_0.95", "quantile_0.99"]
+    columns = [
+        "point_idx",
+        "min_range",
+        "max_range",
+        "quantile_0.01",
+        "quantile_0.05",
+        "quantile_0.25",
+        "quantile_0.75",
+        "quantile_0.95",
+        "quantile_0.99",
+    ]
 
     df = pd.DataFrame(statistics, columns=columns)
     df.to_csv(output_file, index=False)
 
     print(f"Statistics saved to {output_file}")
 
+
 # Example usage
 if __name__ == "__main__":
-    input_dir = '/home/akk/southgate/background_dataset/background_frames1'
-    output_file = "./cpu_range_statistics.csv"
+    input_dir = "/home/akk/southgate/background_dataset/background_frames1"
+    output_file = "./range_statistics.csv"
     process_point_cloud_statistics(input_dir, output_file)
